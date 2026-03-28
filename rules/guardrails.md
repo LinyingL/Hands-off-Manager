@@ -1,0 +1,295 @@
+# Guardrails
+
+These are **mandatory constraints**, not suggestions. They override any conflicting skill guidance. Put these rules in your system prompt, CLAUDE.md, or equivalent always-loaded context. They are designed to be mechanically enforceable—first by the Agent's self-discipline, later by automated scripts.
+
+---
+
+## Guardrail 1: no-diff-no-done
+
+### Rule
+
+If you claim to have modified, fixed, updated, or changed code, there **must** be actual file modifications. If no files were changed, you **must not** use completion language.
+
+### Prohibited Phrases (Without Actual File Changes)
+
+- "I've fixed the bug"
+- "The code has been updated"
+- "I've implemented the feature"
+- "The changes are complete"
+- "I've modified X to do Y"
+- Any variation of "done" / "complete" / "finished" referring to code changes
+
+### Required Behavior
+
+When you finish a code task, before reporting completion:
+
+1. Confirm that files were actually written/modified (you used Write, Edit, or equivalent tools).
+2. If you used tools that write to files, report what changed and where.
+3. If you did NOT modify any files, say exactly: **"No code changes were produced."** Then explain why (e.g., "the fix requires a design decision I need to escalate" or "the existing code already handles this case").
+
+### Why This Exists
+
+LLMs sometimes confuse "planning a change" or "describing a change" with "having made the change." This guardrail forces the Agent to distinguish between intent and action.
+
+---
+
+## Guardrail 2: no-evidence-no-success
+
+### Rule
+
+You **must not** claim that code "works," is "correct," or "passes" without having run verification. Thinking about whether it should work is not the same as proving it works.
+
+### Required Evidence by Claim
+
+| If you say... | You must have run... |
+|---|---|
+| "Tests pass" | `npm test` (or specific test command) and show output |
+| "No type errors" | `npx tsc --noEmit` and show output |
+| "Lint is clean" | `npx eslint .` (or project lint command) and show output |
+| "It works" | At least one of the above, plus describe what you verified |
+| "The bug is fixed" | Show the failing case before and the passing case after |
+| "Build succeeds" | `npm run build` and show output |
+
+### Prohibited Phrases (Without Evidence)
+
+- "This should work"
+- "The fix looks correct"
+- "I believe this resolves the issue"
+- "The code appears to be working"
+
+### Required Behavior
+
+When reporting on code correctness:
+
+1. Run at least one verification command appropriate to the task type.
+2. Include the command and its output (or a summary if output is very long).
+3. If you cannot run verification (e.g., no test environment), say exactly: **"Changes written but not yet verified. Run [specific command] to confirm."**
+
+### Partial Verification Is OK
+
+If you can run `tsc` but not the full test suite, say so:
+> "TypeScript compilation passes. Tests not run—please verify with `npm test`."
+
+This is better than claiming everything works or saying nothing.
+
+---
+
+## Guardrail 3: size-budget-check
+
+### Rule
+
+A single task must not exceed the following thresholds. If any threshold is exceeded, **stop coding immediately**, report current state, and return to the planning phase.
+
+### Default Thresholds
+
+| Metric | Hard limit | Action when exceeded |
+|---|---|---|
+| New files created | 3 | Stop. Re-plan to reuse existing files. |
+| Total files modified | 8 | Stop. Split into subtasks. |
+| Estimated or actual diff lines | 300 | Stop. Identify shippable increments. |
+| New npm dependencies added | 1 | Stop. Escalate for approval. |
+| New abstractions (class/interface/type > 20 lines) | 2 | Stop. Prove reuse need for each. |
+
+### How to Count
+
+- **New files**: Files that didn't exist before this task. Excludes test files that mirror a new source file (1 source + 1 test = 1 new file for budget purposes).
+- **Files modified**: Distinct files with at least 1 line changed. Excludes auto-generated files (lock files, build output).
+- **Diff lines**: Added + deleted lines. Excludes auto-generated files and import statement changes caused by moves.
+- **Dependencies**: New entries in `package.json` dependencies or devDependencies.
+- **Abstractions**: New `class`, `interface`, or `type` declarations over 20 lines. Generic utility types under 5 lines don't count.
+
+### When You Hit a Limit
+
+```
+SIZE BUDGET EXCEEDED
+
+Metric: [which metric]
+Current: [current value]
+Limit: [threshold]
+
+Work completed so far:
+  - [list of changes already made]
+
+Remaining work:
+  - [what still needs to be done]
+
+Proposed split:
+  - Task A: [scope] — can ship independently
+  - Task B: [scope] — depends on Task A
+```
+
+Then wait for human decision: approve the overage, split the work, or change approach.
+
+### Exemptions
+
+These thresholds can be exceeded without stopping, but must still be reported:
+
+- Initial project scaffolding (greenfield setup)
+- Automated code generation output (but the generator script itself must be within budget)
+- Migration files generated by tools (Prisma, TypeORM, etc.)
+- Tasks where the human explicitly pre-approved a larger budget in the task description
+
+---
+
+## Guardrail 4: understand-before-modify
+
+### Rule
+
+Before modifying any existing file, you **must** demonstrate that you understand its current behavior. You cannot jump from "read the file" to "edit the file."
+
+### Required Behavior
+
+Before editing an existing file, do the following **in order**:
+
+1. **State the file's responsibility** in one sentence. What does this file do in the system?
+2. **Identify callers and dependencies.** What other files import from this file? What does this file import? (Use grep/search, not guessing.)
+3. **State the specific behavior you're about to change** and why the current behavior is wrong or insufficient.
+4. **Predict the impact.** Which callers might be affected? Could any of them break?
+
+Only then proceed to edit.
+
+### Exemptions
+
+- Files you created in this same task (you already understand them).
+- Trivial changes: fixing a typo in a comment, updating a version number.
+- Test files (but the source file they test still requires understanding).
+
+### Why This Exists
+
+The most common source of Agent-introduced bugs is changing code without understanding its implicit contracts. A function might look like it just "formats a date," but three callers depend on it returning `null` for invalid input rather than throwing. This guardrail forces the Agent to discover those contracts before breaking them.
+
+---
+
+## Guardrail 5: verify-after-each-file
+
+### Rule
+
+When modifying multiple files in a single task, run verification **after each file change**, not just at the end. If a test breaks, stop immediately and fix that file before touching the next one.
+
+### Required Behavior
+
+For a task that modifies files A, B, and C:
+
+```
+1. Modify file A
+2. Run tests → pass? Continue. Fail? Fix A before touching B.
+3. Modify file B
+4. Run tests → pass? Continue. Fail? Fix B before touching C.
+5. Modify file C
+6. Run tests → final verification.
+```
+
+If the full test suite is too slow, run at minimum:
+- `npx tsc --noEmit` (type check, catches most cross-file breakage)
+- Tests directly related to the modified file
+
+### What to Do When a Test Breaks
+
+1. **Do not modify the next file.** The current file introduced the problem.
+2. Check whether the test failure is in the file you just changed or in a downstream file.
+3. If downstream: your change broke a contract. Re-read the downstream file (per Guardrail 4) and adjust your change.
+4. If in the changed file itself: fix it, re-run tests, then continue.
+
+### Why This Exists
+
+When an Agent modifies 5 files and then runs tests, 3 tests might fail. At that point it's nearly impossible to tell which change caused which failure. The Agent starts guessing, patching, and introducing new bugs. Verifying after each file keeps the feedback loop tight: one change, one check, one fix if needed.
+
+---
+
+## Guardrail 6: revert-before-retry
+
+### Rule
+
+If a code change introduces a test failure and your first fix attempt also fails, **revert to the last known good state** before trying a different approach. Do not stack fix attempts on top of each other.
+
+### Required Behavior
+
+```
+Attempt 1: Modify code → tests fail
+Attempt 2: Try to fix → tests still fail (or different tests fail)
+→ STOP. Revert to the state before Attempt 1.
+→ Re-analyze the problem from scratch.
+→ Try a different approach.
+```
+
+### How to Revert
+
+- If using git: `git checkout -- <file>` to restore the file to its last committed state.
+- If not using git: you must have noted the original content before modifying (per Guardrail 4's "state current behavior" step). Restore it.
+
+### Prohibited Behavior
+
+- ❌ Making a third fix attempt without reverting
+- ❌ "Let me try one more thing" after two failed attempts
+- ❌ Modifying a different file to work around a bug you introduced
+- ❌ Disabling or skipping a test to make the suite pass
+
+### When to Escalate
+
+If after reverting and trying a different approach, the second approach also fails:
+
+```
+## 遇到困难，需要帮助
+
+我尝试了两种不同的方式来 [做什么]，都没有成功。
+
+方式一：[简述做法和失败原因]
+方式二：[简述做法和失败原因]
+
+代码已经恢复到改动前的状态，没有引入新问题。
+
+需要你帮我判断方向，或者我可以 [提出第三种思路]。
+```
+
+### Why This Exists
+
+The single biggest source of "越改越多 bug" is fix stacking: the Agent introduces a bug, tries to fix it, the fix creates a second bug, the second fix creates a third, and within 10 minutes the code is in a state no one understands. Forcing a revert after two failed attempts breaks this cascade.
+
+---
+
+## How to Adopt These Guardrails
+
+### Phase 1: Document Only (Start Here)
+
+Add these three rules to your CLAUDE.md or system prompt. The Agent self-enforces. You review compliance in its output. When you catch a violation, point it out—this trains the Agent within the conversation.
+
+### Phase 2: Add Verification Scripts
+
+Create simple shell scripts the Agent must run before claiming done:
+
+```bash
+# scripts/verify-diff.sh
+# Returns non-zero if no files changed in the working tree
+if [ -z "$(git diff --name-only)" ] && [ -z "$(git diff --staged --name-only)" ]; then
+  echo "ERROR: No file changes detected. Cannot claim code completion."
+  exit 1
+fi
+
+# scripts/check-budget.sh
+# Counts changed files and diff lines
+CHANGED=$(git diff --name-only | wc -l)
+ADDED=$(git diff --stat | tail -1 | grep -oP '\d+ insertion' | grep -oP '\d+')
+DELETED=$(git diff --stat | tail -1 | grep -oP '\d+ deletion' | grep -oP '\d+')
+TOTAL=$((ADDED + DELETED))
+echo "Files changed: $CHANGED (limit: 8)"
+echo "Diff lines: $TOTAL (limit: 300)"
+if [ "$CHANGED" -gt 8 ] || [ "$TOTAL" -gt 300 ]; then
+  echo "WARNING: Size budget exceeded. Return to planning phase."
+  exit 1
+fi
+```
+
+### Phase 3: Automated Enforcement
+
+Hook these into your CI or pre-commit pipeline. The Agent learns to run them proactively because it knows they'll be checked.
+
+---
+
+## Relationship to Skills
+
+These guardrails are the **hard floor** beneath the skills:
+
+- `evidence-based-change-report` teaches the Agent **how** to report well. `no-diff-no-done` and `no-evidence-no-success` ensure it **can't skip reporting**.
+- `bounded-change-planning` teaches the Agent **how** to plan small. `size-budget-check` ensures it **can't exceed the plan** without stopping.
+- `regression-watchlist` tells the Agent **what** to watch. `understand-before-modify` ensures it **actually reads before writing**. `verify-after-each-file` ensures it **catches breakage immediately**. `revert-before-retry` ensures it **doesn't dig deeper holes**.
+- Skills are guidance. Guardrails are constraints. Both are necessary.
