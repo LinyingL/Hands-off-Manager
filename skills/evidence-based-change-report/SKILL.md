@@ -1,3 +1,12 @@
+---
+name: evidence-based-change-report
+description: >
+  Use when reporting that a task, subtask, bug fix, or code change is complete.
+  Defines the completion report format: file list with diffs, verification
+  evidence, deviation notes, and compliance checklist. Enforced by guardrails
+  no-diff-no-done and no-evidence-no-success.
+---
+
 # Evidence-Based Change Report
 
 ## Purpose

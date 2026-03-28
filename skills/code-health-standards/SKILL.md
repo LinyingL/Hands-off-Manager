@@ -1,3 +1,13 @@
+---
+name: code-health-standards
+description: >
+  Use when writing new modules, making architectural decisions, or when
+  default-decision-policy says "follow existing conventions" — this document
+  IS the conventions. Defines module boundaries, naming rules, anti-debt
+  patterns, and health metrics for full-stack TypeScript projects.
+  Note: this is a project template — customize module structure for your project.
+---
+
 # Code Health Standards
 
 ## Purpose

@@ -1,3 +1,12 @@
+---
+name: surgical-refactor
+description: >
+  Use when fixing a bug near messy code, or when tempted to refactor while
+  doing unrelated work. Enforces strict separation: bug fixes and refactors
+  never share a commit. One new concept per task. Delete before abstract.
+  Prove behavior before changing structure.
+---
+
 # Surgical Refactor
 
 ## Purpose

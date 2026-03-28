@@ -1,3 +1,12 @@
+---
+name: plain-language-reporting
+description: >
+  Use for ALL human-facing output — reports, escalations, status updates,
+  health checks. Translates technical details into plain Chinese product
+  language. Technical specifics go in a collapsed section. Includes a
+  tech-to-plain-Chinese translation table. Overrides all other report formats.
+---
+
 # Plain Language Reporting
 
 ## Purpose

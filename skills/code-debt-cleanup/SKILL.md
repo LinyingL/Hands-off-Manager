@@ -1,3 +1,12 @@
+---
+name: code-debt-cleanup
+description: >
+  Use when entering a module not recently touched (lightweight scan), or after
+  a milestone/feature ships (full scan). Detects dead exports, orphaned
+  patterns, growing files, dependency direction violations, and duplication.
+  Produces a Chinese-language health report with severity and trend tracking.
+---
+
 # Code Debt Cleanup
 
 ## Purpose

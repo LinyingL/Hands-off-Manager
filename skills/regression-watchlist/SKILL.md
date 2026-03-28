@@ -1,3 +1,12 @@
+---
+name: regression-watchlist
+description: >
+  Use when modifying files in high-risk areas (auth, database, shared types,
+  API routes, state management, shared utilities). Provides a per-module
+  checklist of invariants and required tests. Must be customized per project.
+  Note: this is a project template — fill in actual paths before use.
+---
+
 # Regression Watchlist
 
 ## Purpose

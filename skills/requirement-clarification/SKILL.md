@@ -1,3 +1,12 @@
+---
+name: requirement-clarification
+description: >
+  Use when the human gives a product-level request that hasn't been broken down
+  into specifics — "做一个XX功能", "我想要XX", "XX有问题修一下". Translates
+  vague ideas into actionable specs using scenario-based questions in Chinese.
+  Outputs a confirmed requirement summary before any code is written.
+---
+
 # Requirement Clarification
 
 ## Purpose

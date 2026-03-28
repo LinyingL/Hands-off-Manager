@@ -1,3 +1,12 @@
+---
+name: product-qa
+description: >
+  Use after a feature or bug fix is complete, before reporting "done". Verifies
+  the result from the user's perspective — not code quality, but whether the
+  feature works as specified. Walks through normal flow, edge cases, and scope
+  confirmation. Outputs a Chinese-language acceptance report.
+---
+
 # Product QA
 
 ## Purpose

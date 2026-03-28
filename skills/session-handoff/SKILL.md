@@ -1,3 +1,13 @@
+---
+name: session-handoff
+description: >
+  Use at end of every session (or when conversation is winding down) to write
+  a handoff memo to .claude/handoff.md. Use at start of every new session to
+  read the existing handoff and resume context. Preserves progress, decisions,
+  known issues, and project conventions across sessions.
+  Note: ideally a lifecycle hook, implemented as skill until hook support exists.
+---
+
 # Session Handoff
 
 ## Purpose

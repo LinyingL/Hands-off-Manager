@@ -1,3 +1,13 @@
+---
+name: default-decision-policy
+description: >
+  Use when the Agent encounters an unspecified choice during implementation —
+  naming, file organization, code style, internal decomposition, or any
+  low-stakes decision. Prevents unnecessary interruptions by providing
+  autonomous decision rules. Pair with escalation-thresholds for the
+  full decision boundary.
+---
+
 # Default Decision Policy
 
 ## Purpose

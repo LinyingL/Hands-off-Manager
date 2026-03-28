@@ -1,3 +1,12 @@
+---
+name: bounded-change-planning
+description: >
+  Use before writing any code for a task that touches multiple files, creates
+  new files, or modifies shared modules. Produces a change plan with file list,
+  estimated diff size, and enforces budget limits (3 new files / 8 modified /
+  300 diff lines). Stops work and re-scopes when limits are exceeded.
+---
+
 # Bounded Change Planning
 
 ## Purpose
