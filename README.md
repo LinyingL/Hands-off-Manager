@@ -184,6 +184,121 @@ head -3 ~/.claude/skills/default-decision-policy/SKILL.md
 
 有基础编程能力但不是每天看代码的人——产品经理、创始人、项目负责人。所有报告、决策升级、健康检查都用中文产品语言。但三个环节仍需懂代码的人定期介入：需求澄清的技术细节、关键技术选型、独立代码审查。
 
+---
+
+# English
+
+Skills & guardrails for AI coding agents. Built for non-developers (product managers, founders, project leads) who use Claude Code / Cursor / Codex / Antigravity to build complex applications.
+
+## Problems Solved
+
+1. **Agent asks about every trivial choice** → Decision policy + escalation thresholds let it handle low-stakes decisions autonomously
+2. **Cascading bugs — fix one, break two** → Understand-before-modify, verify-after-each-file, revert-before-retry — three guardrails that cut the chain
+3. **Claims "done" without actually changing anything** → Guardrails require actual diffs before "done" and evidence before "works"
+4. **Growing code mess** → Health standards + periodic debt scans catch problems while they're still small
+5. **Can't understand technical reports** → All reports auto-translated to plain product language
+6. **Vague requirements** → Scenario-based questions turn fuzzy ideas into actionable specs
+7. **Context lost between sessions** → Auto-written handoff memo, next session picks up where you left off
+8. **Can't tell if a feature actually works** → User-perspective acceptance testing — no code knowledge needed
+
+## Language Support
+
+Each skill has two versions:
+
+- `SKILL.md` — Chinese (default): reports, templates, and QA output in Chinese
+- `en/SKILL.md` — English: same logic, English output
+
+To use the English versions, copy the `en/SKILL.md` files instead:
+
+```bash
+# Example: install English version of a skill
+cp skills/default-decision-policy/en/SKILL.md ~/.claude/skills/default-decision-policy/SKILL.md
+```
+
+## Installation
+
+### Prerequisites
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed (VS Code extension or CLI)
+- Or any AI coding tool that supports `.claude/skills/`
+
+### Full Install
+
+```bash
+git clone https://github.com/LinyingL/Hands-off-Manager.git
+cd Hands-off-Manager
+
+# Copy all skills (Chinese version — for English, use en/SKILL.md from each skill folder)
+cp -r skills/P0/* ~/.claude/skills/
+cp -r skills/P1/* ~/.claude/skills/
+cp -r skills/communication/* ~/.claude/skills/
+cp -r skills/maintenance/* ~/.claude/skills/
+
+# Copy guardrails
+mkdir -p ~/.claude/rules
+cp guardrails/guardrails.md ~/.claude/rules/
+
+# Copy CLAUDE.md to your project root
+cp CLAUDE.md /your/project/root/CLAUDE.md
+```
+
+### Plugin Install (Claude Code)
+
+```
+/plugin marketplace add LinyingL/Hands-off-Manager
+/plugin install hands-off-manager@hands-off-manager
+```
+
+### Post-Install Customization
+
+Two skills contain project templates — customize them for your project:
+
+1. **regression-watchlist** — Replace example paths and test commands with your actual modules
+2. **code-health-standards** — Replace the project structure template with your actual directory layout
+
+## 12 Skills Overview
+
+### P0: Core (5)
+
+- **`default-decision-policy`** — Autonomous decision rules. Follow existing conventions; if none, pick the simpler option.
+- **`bounded-change-planning`** — Change plan required before coding. Budget: 3 new files / 8 modified / 300 diff lines.
+- **`evidence-based-change-report`** — Completion report with file list, diffs, verification evidence, and compliance checklist.
+- **`escalation-thresholds`** — Three-tier lookup table: never ask / always ask / conditional.
+- **`requirement-clarification`** — Scenario-based questions to turn vague requests into confirmed specs before coding starts.
+
+### P1: Extended (3)
+
+- **`regression-watchlist`** — High-risk module checklist with invariants and required tests. *Needs customization.*
+- **`surgical-refactor`** — Five rules: separate fix from refactor, one concept per task, delete before abstract.
+- **`product-qa`** — User-perspective acceptance testing: normal flow, edge cases, scope check.
+
+### Communication (2)
+
+- **`plain-language-reporting`** — Translates all output to plain product language. Tech details collapsed at bottom.
+- **`session-handoff`** — Auto-writes handoff memo at session end: progress, decisions, known issues, conventions.
+
+### Maintenance (2)
+
+- **`code-health-standards`** — Module boundaries, naming rules, anti-debt patterns, health metrics. *Needs customization.*
+- **`code-debt-cleanup`** — Lightweight scan (one-line note) + full scan (health report with severity + trends).
+
+## 6 Guardrails
+
+Loaded into `.claude/rules/`, always active. Skills guide; guardrails enforce:
+
+| # | Name | Rule | Trigger |
+|---|---|---|---|
+| G1 | no-diff-no-done | No changes = can't claim done | When claiming code changes complete |
+| G2 | no-evidence-no-success | No evidence = can't claim success | When claiming code is correct |
+| G3 | size-budget-check | Over budget = must stop and re-plan | New files >3 / modified >8 / diff >300 lines |
+| G4 | understand-before-modify | Must understand before modifying | Before modifying any existing file |
+| G5 | verify-after-each-file | Verify after each file change | When task touches 2+ files |
+| G6 | revert-before-retry | Two failures = revert and restart | When fix attempts fail consecutively |
+
+## Who Is This For
+
+People with basic programming knowledge who don't read code daily — product managers, founders, project leads. All reports, escalations, and health checks use plain product language. Three areas still need a developer's periodic input: technical details in requirement clarification, key architecture decisions, and independent code review.
+
 ## License
 
 [MIT](LICENSE)

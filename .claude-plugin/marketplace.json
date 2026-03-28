@@ -1,0 +1,27 @@
+{
+  "name": "hands-off-manager",
+  "owner": {
+    "name": "Linying Li",
+    "email": "sk480js@gmail.com"
+  },
+  "metadata": {
+    "description": "甩手掌柜技能包：12 个 Skills + 6 条 Guardrails，让非技术人也能管好 AI 编程 Agent",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "hands-off-manager",
+      "source": "./",
+      "description": "AI Coder Agent Skills & Guardrails — 决策策略、改动控制、完成报告、中文汇报等 12 个 skill + 6 条 guardrail",
+      "version": "1.0.0",
+      "author": {
+        "name": "Linying Li"
+      },
+      "homepage": "https://github.com/LinyingL/Hands-off-Manager",
+      "repository": "https://github.com/LinyingL/Hands-off-Manager",
+      "license": "MIT",
+      "keywords": ["skills", "guardrails", "chinese", "non-technical", "product-manager", "workflow"],
+      "category": "workflow"
+    }
+  ]
+}
