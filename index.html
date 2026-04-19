@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>2015–2025年中国全部税种收入变化</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#f5f5f0; font-family:system-ui,-apple-system,sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, LineChart, Line, ReferenceLine, Cell,
+  AreaChart, Area, ComposedChart
+} = Recharts;
+
+// ── Color palette ──
+const C = {
+  bg: "#FFFFFF",
+  black: "#222222",
+  grey: "#6B7280",
+  border: "#D1D5DB",
+  rowAlt: "#F9FAFB",
+  accent: "#B91C1C",
+};
+const PAL = ["#2563EB","#DC2626","#059669","#D97706","#7C3AED","#0891B2","#BE185D","#4B5563"];
+
+// ── 2015–2025 dataset (亿元) ──
+const raw = [
+  { y:2015, 增值税:31109,消费税:10542,企业所得税:27125,个人所得税:8618,进口增值税消费税:12517,关税:2555,城市维护建设税:3886,车辆购置税:2791,印花税:3441,资源税:1035,契税:3898,房产税:2051,城镇土地使用税:2143,土地增值税:3833,耕地占用税:2098,环境保护税:0,其他:1028 },
+  { y:2016, 增值税:40712,消费税:10217,企业所得税:28850,个人所得税:10089,进口增值税消费税:12781,关税:2603,城市维护建设税:4034,车辆购置税:2674,印花税:2209,资源税:951,契税:4300,房产税:2221,城镇土地使用税:2256,土地增值税:4212,耕地占用税:2029,环境保护税:0,其他:1067 },
+  { y:2017, 增值税:56378,消费税:10225,企业所得税:32111,个人所得税:11966,进口增值税消费税:15969,关税:2998,城市维护建设税:4362,车辆购置税:3281,印花税:2206,资源税:1353,契税:4910,房产税:2604,城镇土地使用税:2360,土地增值税:4911,耕地占用税:1652,环境保护税:0,其他:1154 },
+  { y:2018, 增值税:61529,消费税:10632,企业所得税:35323,个人所得税:13872,进口增值税消费税:16879,关税:2848,城市维护建设税:4840,车辆购置税:3453,印花税:2199,资源税:1630,契税:5730,房产税:2889,城镇土地使用税:2388,土地增值税:5642,耕地占用税:1319,环境保护税:151,其他:1175 },
+  { y:2019, 增值税:62346,消费税:12562,企业所得税:37300,个人所得税:10388,进口增值税消费税:15816,关税:2888,城市维护建设税:4821,车辆购置税:3498,印花税:2463,资源税:1822,契税:6213,房产税:2988,城镇土地使用税:2195,土地增值税:6465,耕地占用税:1390,环境保护税:221,其他:1122 },
+  { y:2020, 增值税:56791,消费税:12028,企业所得税:36424,个人所得税:11568,进口增值税消费税:14535,关税:2564,城市维护建设税:4608,车辆购置税:3531,印花税:3087,资源税:1755,契税:7061,房产税:2842,城镇土地使用税:2058,土地增值税:6468,耕地占用税:1258,环境保护税:207,其他:1153 },
+  { y:2021, 增值税:63519,消费税:13881,企业所得税:42041,个人所得税:13993,进口增值税消费税:17316,关税:2806,城市维护建设税:5217,车辆购置税:3520,印花税:4076,资源税:2288,契税:7428,房产税:3278,城镇土地使用税:2126,土地增值税:6896,耕地占用税:1065,环境保护税:203,其他:1236 },
+  { y:2022, 增值税:48717,消费税:16699,企业所得税:43690,个人所得税:14923,进口增值税消费税:19995,关税:2860,城市维护建设税:5075,车辆购置税:2398,印花税:4390,资源税:3389,契税:5794,房产税:3590,城镇土地使用税:2226,土地增值税:6349,耕地占用税:1257,环境保护税:211,其他:1309 },
+  { y:2023, 增值税:69332,消费税:16118,企业所得税:41098,个人所得税:14774,进口增值税消费税:19485,关税:2591,城市维护建设税:5223,车辆购置税:2681,印花税:3784,资源税:3070,契税:5910,房产税:3994,城镇土地使用税:2213,土地增值税:5294,耕地占用税:1127,环境保护税:205,其他:1351 },
+  { y:2024, 增值税:66672,消费税:16532,企业所得税:40887,个人所得税:14522,进口增值税消费税:19177,关税:2443,城市维护建设税:5026,车辆购置税:2430,印花税:3427,资源税:2964,契税:5170,房产税:4705,城镇土地使用税:2425,土地增值税:4869,耕地占用税:1368,环境保护税:246,其他:1390 },
+  { y:2025, 增值税:68947,消费税:16857,企业所得税:41304,个人所得税:16187,进口增值税消费税:18263,关税:2369,城市维护建设税:5170,车辆购置税:1972,印花税:4270,资源税:2950,契税:4440,房产税:5212,城镇土地使用税:2546,土地增值税:4102,耕地占用税:1446,环境保护税:282,其他:1398 },
+];
+
+// ── Panel config ──
+const panels = [
+  {
+    id:"major", title:"主要税种",
+    sub:"增值税在营改增后跳升，企业所得税近三年横盘",
+    keys:["增值税","企业所得税","消费税","个人所得税"],
+    colors:[PAL[0],PAL[2],PAL[3],PAL[1]],
+  },
+  {
+    id:"realestate", title:"房地产相关税收",
+    sub:"契税和土地增值税在跌，房产税反而在涨",
+    keys:["契税","土地增值税","房产税","城镇土地使用税","耕地占用税"],
+    colors:[PAL[0],PAL[1],PAL[2],PAL[3],PAL[4]],
+  },
+  {
+    id:"trade", title:"贸易与流转税",
+    sub:"进口环节税收2022年后开始回落，关税逐年收缩",
+    keys:["进口增值税消费税","关税","城市维护建设税"],
+    colors:[PAL[0],PAL[1],PAL[2]],
+  },
+  {
+    id:"other", title:"其他税种",
+    sub:"车辆购置税腰斩，印花税跟着股市忽上忽下",
+    keys:["车辆购置税","印花税","资源税","环境保护税"],
+    colors:[PAL[0],PAL[1],PAL[2],PAL[3]],
+  },
+];
+
+// ── Burden data ──
+const quintileData = [
+  { group:"低收入\n20%", income:9542, consumptionRate:0.95, vatRate:0.10, pitRate:0, socialInsRate:0.02 },
+  { group:"中低收入\n20%", income:21608, consumptionRate:0.85, vatRate:0.10, pitRate:0, socialInsRate:0.05 },
+  { group:"中等收入\n20%", income:33925, consumptionRate:0.75, vatRate:0.10, pitRate:0, socialInsRate:0.08 },
+  { group:"中高收入\n20%", income:53359, consumptionRate:0.65, vatRate:0.10, pitRate:0.015, socialInsRate:0.10 },
+  { group:"高收入\n20%", income:98809, consumptionRate:0.42, vatRate:0.10, pitRate:0.065, socialInsRate:0.10 },
+];
+const burdenData = quintileData.map(q => {
+  const vatBurden = q.consumptionRate * q.vatRate * 100;
+  const pitBurden = q.pitRate * 100;
+  const socialBurden = q.socialInsRate * 100;
+  return {
+    group: q.group, income: q.income,
+    "增值税隐性负担": +vatBurden.toFixed(1),
+    "个税+社保": +(pitBurden + socialBurden).toFixed(1),
+    总负担率: +(vatBurden + pitBurden + socialBurden).toFixed(1),
+  };
+});
+
+// ── YoY ──
+function yoy(data, keys) {
+  return data.slice(1).map((d,i) => {
+    const p = data[i]; const row = {y:d.y};
+    keys.forEach(k => { row[k] = p[k] ? +((d[k]/p[k]-1)*100).toFixed(1) : null; });
+    return row;
+  });
+}
+
+// ── Components ──
+function Header({title,sub}) {
+  return (
+    <div style={{marginBottom:14}}>
+      <div style={{width:40,height:2,background:C.accent,marginBottom:10}}/>
+      <h2 style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,color:C.black,margin:"0 0 3px",lineHeight:1.3}}>{title}</h2>
+      {sub && <p style={{fontSize:12,color:C.grey,margin:0,lineHeight:1.5}}>{sub}</p>}
+    </div>
+  );
+}
+
+function Tip({active,payload,label,suffix="亿元"}) {
+  if(!active||!payload) return null;
+  return (
+    <div style={{background:"#fff",border:"1px solid "+C.border,padding:"8px 12px",fontSize:11,boxShadow:"0 2px 6px rgba(0,0,0,0.08)"}}>
+      <div style={{fontWeight:700,marginBottom:4,color:C.black}}>{label}年</div>
+      {payload.filter(p=>p.value!=null).map((p,i)=>(
+        <div key={i} style={{display:"flex",justifyContent:"space-between",gap:14,lineHeight:1.6}}>
+          <span style={{color:C.grey}}>
+            <span style={{display:"inline-block",width:7,height:7,background:p.color,marginRight:5,borderRadius:1}}/>
+            {p.name}
+          </span>
+          <span style={{fontWeight:600,color:C.black}}>{typeof p.value==="number"?p.value.toLocaleString():p.value}{suffix}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Legend({keys,colors}) {
+  return (
+    <div style={{display:"flex",flexWrap:"wrap",gap:"3px 14px",marginBottom:6}}>
+      {keys.map((k,i)=>(
+        <span key={k} style={{fontSize:11,color:C.grey,display:"flex",alignItems:"center",gap:4}}>
+          <span style={{display:"inline-block",width:10,height:3,background:colors[i],borderRadius:1}}/>
+          {k}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function AbsPanel({panel}) {
+  const data = raw.map(d => {
+    const row = {y:d.y};
+    panel.keys.forEach(k => { row[k] = d[k]; });
+    return row;
+  });
+  return (
+    <div style={{marginBottom:36}}>
+      <Header title={panel.title} sub={panel.sub}/>
+      <Legend keys={panel.keys} colors={panel.colors}/>
+      <div style={{fontSize:10,color:C.grey,marginBottom:2}}>单位：亿元</div>
+      <ResponsiveContainer width="100%" height={260}>
+        <BarChart data={data} margin={{top:6,right:10,left:0,bottom:0}} barCategoryGap="20%">
+          <CartesianGrid vertical={false} stroke={C.border} strokeDasharray="none" strokeOpacity={0.5}/>
+          <XAxis dataKey="y" tick={{fontSize:10,fill:C.grey}} axisLine={{stroke:C.border}} tickLine={false}/>
+          <YAxis tick={{fontSize:9,fill:C.grey}} axisLine={false} tickLine={false} tickFormatter={v=>v>=10000?(v/10000).toFixed(1)+"万亿":""+v} width={52}/>
+          <Tooltip content={<Tip/>}/>
+          {panel.keys.map((k,i)=>(
+            <Bar key={k} dataKey={k} fill={panel.colors[i]} radius={[1,1,0,0]} maxBarSize={22}/>
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function YoyPanel({panel}) {
+  const d = yoy(raw,panel.keys);
+  return (
+    <div style={{marginBottom:36}}>
+      <Header title={panel.title+"：同比增速"} sub="年度变化率（%）"/>
+      <Legend keys={panel.keys} colors={panel.colors}/>
+      <ResponsiveContainer width="100%" height={220}>
+        <LineChart data={d} margin={{top:6,right:10,left:0,bottom:0}}>
+          <CartesianGrid vertical={false} stroke={C.border} strokeOpacity={0.5}/>
+          <XAxis dataKey="y" tick={{fontSize:10,fill:C.grey}} axisLine={{stroke:C.border}} tickLine={false}/>
+          <YAxis tick={{fontSize:9,fill:C.grey}} axisLine={false} tickLine={false} tickFormatter={v=>v+"%"} width={44}/>
+          <ReferenceLine y={0} stroke={C.grey} strokeWidth={0.7}/>
+          <Tooltip content={<Tip suffix="%"/>}/>
+          {panel.keys.map((k,i)=>(
+            <Line key={k} type="monotone" dataKey={k} stroke={panel.colors[i]} strokeWidth={2} dot={{r:2.5,fill:panel.colors[i],strokeWidth:0}} connectNulls/>
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function Waterfall() {
+  const cats = [
+    {n:"增值税",k:"增值税"},{n:"企业所得税",k:"企业所得税"},{n:"个人所得税",k:"个人所得税"},
+    {n:"消费税",k:"消费税"},{n:"契税",k:"契税"},{n:"土地增值税",k:"土地增值税"},
+    {n:"房产税",k:"房产税"},{n:"车辆购置税",k:"车辆购置税"},{n:"印花税",k:"印花税"},
+    {n:"资源税",k:"资源税"},{n:"进口增消",k:"进口增值税消费税"},{n:"关税",k:"关税"},
+    {n:"城建税",k:"城市维护建设税"},{n:"土地使用税",k:"城镇土地使用税"},
+    {n:"耕地占用税",k:"耕地占用税"},{n:"环保税",k:"环境保护税"},
+  ];
+  const d0=raw[0], dN=raw[raw.length-1];
+  const data = cats.map(c=>({name:c.n, change:dN[c.k]-d0[c.k]})).sort((a,b)=>b.change-a.change);
+  return (
+    <div style={{marginBottom:36}}>
+      <Header title="十年增减：2025年 vs 2015年" sub="各税种收入绝对变化（亿元）"/>
+      <ResponsiveContainer width="100%" height={380}>
+        <BarChart data={data} layout="vertical" margin={{top:4,right:30,left:0,bottom:0}}>
+          <CartesianGrid horizontal={false} stroke={C.border} strokeOpacity={0.4}/>
+          <XAxis type="number" tick={{fontSize:9,fill:C.grey}} axisLine={{stroke:C.border}} tickLine={false} tickFormatter={v=>v>=1000?"+"+Math.round(v/1000)+"k":v<=-1000?Math.round(v/1000)+"k":""+v}/>
+          <YAxis type="category" dataKey="name" tick={{fontSize:10,fill:C.black}} axisLine={false} tickLine={false} width={68}/>
+          <ReferenceLine x={0} stroke={C.black} strokeWidth={0.7}/>
+          <Tooltip formatter={v=>[(v>0?"+":"")+v.toLocaleString()+" 亿元","变化"]} contentStyle={{fontSize:11,border:"1px solid "+C.border}}/>
+          <Bar dataKey="change" radius={[2,2,2,2]} maxBarSize={14}>
+            {data.map((d,i)=>(<Cell key={i} fill={d.change>=0?PAL[0]:PAL[1]}/>))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function SummaryRow() {
+  const d=raw[raw.length-1], p=raw[raw.length-2];
+  const sumAll = r => Object.entries(r).filter(([k])=>k!=="y").reduce((s,[,v])=>s+v,0);
+  const items = [
+    {l:"税收总规模",v:sumAll(d),b:sumAll(p)},
+    {l:"增值税",v:d.增值税,b:p.增值税},
+    {l:"企业所得税",v:d.企业所得税,b:p.企业所得税},
+    {l:"个人所得税",v:d.个人所得税,b:p.个人所得税},
+    {l:"契税",v:d.契税,b:p.契税},
+    {l:"房产税",v:d.房产税,b:p.房产税},
+  ];
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10,marginBottom:30}}>
+      {items.map(it=>{
+        const pct=((it.v/it.b-1)*100).toFixed(1); const up=pct>0;
+        return (
+          <div key={it.l} style={{borderTop:"3px solid "+(up?PAL[0]:PAL[1]),paddingTop:8}}>
+            <div style={{fontSize:10,color:C.grey,marginBottom:1}}>{it.l}</div>
+            <div style={{fontSize:18,fontWeight:700,color:C.black,fontFamily:"Georgia,serif"}}>
+              {(it.v/10000).toFixed(2)}<span style={{fontSize:10,fontWeight:400,color:C.grey}}> 万亿</span>
+            </div>
+            <div style={{fontSize:11,fontWeight:600,color:up?PAL[0]:PAL[1]}}>{up?"+":""}{pct}%</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DataTable() {
+  const allKeys = [
+    "增值税","消费税","企业所得税","个人所得税",
+    "契税","土地增值税","房产税","城镇土地使用税","耕地占用税",
+    "进口增值税消费税","关税","城市维护建设税",
+    "车辆购置税","印花税","资源税","环境保护税","其他",
+  ];
+  return (
+    <div style={{overflowX:"auto",marginBottom:20}}>
+      <Header title="完整数据表" sub="2015–2025年各税种收入（亿元）"/>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:10,whiteSpace:"nowrap"}}>
+        <thead>
+          <tr style={{borderBottom:"2px solid "+C.black}}>
+            <th style={{textAlign:"left",padding:"5px 6px",color:C.black,fontWeight:700}}>税种</th>
+            {raw.map(d=>(<th key={d.y} style={{textAlign:"right",padding:"5px 6px",color:C.black,fontWeight:700}}>{d.y}</th>))}
+            <th style={{textAlign:"right",padding:"5px 6px",color:C.accent,fontWeight:700}}>10年</th>
+          </tr>
+        </thead>
+        <tbody>
+          {allKeys.map((k,i)=>{
+            const first=raw[0][k], last=raw[raw.length-1][k];
+            const pct = first>0 ? ((last/first-1)*100).toFixed(0) : "—";
+            return (
+              <tr key={k} style={{borderBottom:"1px solid "+C.border,background:i%2===0?"#fff":C.rowAlt}}>
+                <td style={{padding:"4px 6px",color:C.black,fontWeight:500}}>{k}</td>
+                {raw.map(d=>(<td key={d.y} style={{padding:"4px 6px",textAlign:"right",color:C.grey}}>{d[k].toLocaleString()}</td>))}
+                <td style={{padding:"4px 6px",textAlign:"right",fontWeight:600,color:typeof pct==="string"&&pct==="—"?C.grey:(parseFloat(pct)>=0?PAL[0]:PAL[1])}}>{pct==="—"?pct:(parseFloat(pct)>=0?"+":"")+pct+"%"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Burden Section ──
+const bTip = { background:"#fff", border:"1px solid "+C.border, borderRadius:3, padding:"8px 12px", fontSize:12, lineHeight:1.6 };
+
+function BurdenSection() {
+  return (
+    <div>
+      <div style={{marginBottom:36}}>
+        <Header title="谁在为增值税买单" sub="低收入者把95%的收入花出去，增值税吃掉其中9.5%。高收入者只花42%，实际只交了4.2%"/>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={burdenData} margin={{top:10,right:20,left:0,bottom:30}}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.border}/>
+            <XAxis dataKey="group" tick={{fontSize:11,fill:C.grey}} interval={0} height={60}/>
+            <YAxis tick={{fontSize:11,fill:C.grey}} tickFormatter={v=>v+"%"} domain={[0,12]}/>
+            <Tooltip contentStyle={bTip} formatter={(v,name)=>[v+"%",name]}/>
+            <Bar dataKey="增值税隐性负担" fill={C.accent} barSize={30} radius={[2,2,0,0]}/>
+            <Bar dataKey="个税+社保" fill={PAL[0]} barSize={30} radius={[2,2,0,0]}/>
+          </BarChart>
+        </ResponsiveContainer>
+        <div style={{display:"flex",gap:16,justifyContent:"center",marginTop:4,fontSize:11,color:C.grey}}>
+          <span><span style={{display:"inline-block",width:10,height:10,background:C.accent,borderRadius:2,marginRight:4,verticalAlign:-1}}/>增值税隐性负担</span>
+          <span><span style={{display:"inline-block",width:10,height:10,background:PAL[0],borderRadius:2,marginRight:4,verticalAlign:-1}}/>个税+社保</span>
+        </div>
+        <div style={{marginTop:12,display:"flex",gap:10,flexWrap:"wrap"}}>
+          <div style={{flex:"1 1 180px",padding:"10px 14px",background:C.rowAlt,borderRadius:3,fontSize:12,borderLeft:"3px solid "+C.accent}}>
+            <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:C.accent}}>9.5%</div>
+            <div style={{color:C.grey,marginTop:2}}>低收入者的增值税负担率</div>
+            <div style={{color:C.grey,fontSize:11}}>年收入¥9,542 · 花掉95%</div>
+          </div>
+          <div style={{flex:"1 1 180px",padding:"10px 14px",background:C.rowAlt,borderRadius:3,fontSize:12,borderLeft:"3px solid "+C.accent}}>
+            <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:C.accent}}>4.2%</div>
+            <div style={{color:C.grey,marginTop:2}}>高收入者的增值税负担率</div>
+            <div style={{color:C.grey,fontSize:11}}>年收入¥98,809 · 花掉42%</div>
+          </div>
+          <div style={{flex:"1 1 180px",padding:"10px 14px",background:C.rowAlt,borderRadius:3,fontSize:12,borderLeft:"3px solid "+PAL[0]}}>
+            <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:PAL[0]}}>2.0% → 16.5%</div>
+            <div style={{color:C.grey,marginTop:2}}>可见税负担率：低→高</div>
+            <div style={{color:C.grey,fontSize:11}}>个税+社保，越有钱交越多</div>
+          </div>
+        </div>
+      </div>
+      <div style={{fontSize:10,color:C.grey,lineHeight:1.7}}>
+        数据来源：国家统计局收入五等分数据(2024)、财政部税收数据(2015-2025)。增值税有效税率按13%/9%/免税品综合估算为~10%。
+      </div>
+    </div>
+  );
+}
+
+// ── Main App ──
+function ChinaTax() {
+  const [view,setView] = useState("abs");
+  const tabs = [{k:"abs",l:"规模对比"},{k:"yoy",l:"增速趋势"},{k:"waterfall",l:"十年增减"},{k:"table",l:"数据表"},{k:"burden",l:"税负分摊"}];
+
+  return (
+    <div style={{maxWidth:920,margin:"0 auto",padding:"32px 24px",background:C.bg,color:C.black,fontFamily:"system-ui,-apple-system,sans-serif"}}>
+      <div style={{borderBottom:"2px solid "+C.accent,paddingBottom:10,marginBottom:22}}>
+        <h1 style={{fontFamily:"Georgia,serif",fontSize:24,fontWeight:700,color:C.black,margin:"0 0 4px",lineHeight:1.25}}>
+          2015–2025年中国全部税种收入变化
+        </h1>
+        <p style={{fontSize:13,color:C.grey,margin:0}}>数据来源：财政部国库司历年《财政收支情况》</p>
+      </div>
+
+      <SummaryRow/>
+
+      <div style={{display:"flex",gap:0,marginBottom:24,borderBottom:"1px solid "+C.border}}>
+        {tabs.map(t=>(
+          <button key={t.k} onClick={()=>setView(t.k)} style={{
+            padding:"7px 16px",border:"none",cursor:"pointer",fontSize:12,fontWeight:view===t.k?700:400,
+            color:view===t.k?C.accent:C.grey,background:"none",
+            borderBottom:view===t.k?"2px solid "+C.accent:"2px solid transparent",
+          }}>{t.l}</button>
+        ))}
+      </div>
+
+      {view==="abs" && panels.map(p=>(<AbsPanel key={p.id} panel={p}/>))}
+      {view==="yoy" && panels.map(p=>(<YoyPanel key={p.id} panel={p}/>))}
+      {view==="waterfall" && <Waterfall/>}
+      {view==="table" && <DataTable/>}
+      {view==="burden" && <BurdenSection/>}
+
+      <div style={{borderTop:"1px solid "+C.border,paddingTop:10,marginTop:20,fontSize:10,color:C.grey,lineHeight:1.7}}>
+        <p style={{margin:"0 0 3px"}}>注：增值税为国内增值税（不含进口环节），消费税为国内消费税。2015年部分小税种据2016年同比增速反推。2017年企业所得税、个人所得税据官方公布增速推算。2025年城镇土地使用税、耕地占用税、环保税据半年数据估算。环保税2018年起开征。</p>
+        <p style={{margin:0}}>Source: 中华人民共和国财政部国库司《财政收支情况》(2015–2025)</p>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<ChinaTax/>);
+</script>
+</body>
+</html>
